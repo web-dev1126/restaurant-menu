@@ -1,9 +1,11 @@
 class Menu < ApplicationRecord
   # Associations
-  has_many :menu_items, dependent: :destroy
+  belongs_to :restaurant
+  has_many :menu_item_menus, dependent: :destroy
+  has_many :menu_items, through: :menu_item_menus
 
   # Validations
-  validates :name, presence: true, length: { minimum: 2, maximum: 100 }, uniqueness: true
+  validates :name, presence: true, length: { minimum: 2, maximum: 100 }, uniqueness: { scope: :restaurant_id }
   validates :description, length: { maximum: 500 }
   validates :active, inclusion: { in: [true, false] }
 

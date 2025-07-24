@@ -1,9 +1,11 @@
 class MenuItem < ApplicationRecord
   # Associations
-  belongs_to :menu
+  has_many :menu_item_menus, dependent: :destroy
+  has_many :menus, through: :menu_item_menus
+  has_many :restaurants, through: :menus
 
   # Validations
-  validates :name, presence: true, length: { minimum: 2, maximum: 100 }, uniqueness: { scope: :menu_id }
+  validates :name, presence: true, length: { minimum: 2, maximum: 100 }, uniqueness: true
   validates :description, length: { maximum: 500 }
   validates :price, presence: true, numericality: { greater_than: 0 }
   validates :category, presence: true, length: { minimum: 2, maximum: 50 }
@@ -21,6 +23,6 @@ class MenuItem < ApplicationRecord
   end
 
   def available?
-    available
+    menus.active.exists?
   end
 end 

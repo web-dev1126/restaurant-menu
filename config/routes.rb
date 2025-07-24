@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       end
       resources :menu_items, except: [:index, :create]
       resources :restaurants, only: [:index, :show, :create, :update, :destroy]
+      post 'import', to: 'imports#create'
     end
   end
 

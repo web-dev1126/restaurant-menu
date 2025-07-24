@@ -24,9 +24,9 @@ namespace :import do
     puts
     puts "=" * 50
     if result
-      puts "✅ Import completed successfully!"
+      puts "Import completed successfully!"
     else
-      puts "❌ Import completed with errors."
+      puts "Import completed with errors."
     end
   end
 
@@ -61,9 +61,9 @@ namespace :import do
     puts
     puts "=" * 50
     if result
-      puts "✅ Import completed successfully!"
+      puts "Import completed successfully!"
     else
-      puts "❌ Import completed with errors."
+      puts "Import completed with errors."
     end
   end
 end 

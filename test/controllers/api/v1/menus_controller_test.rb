@@ -2,17 +2,18 @@ require "test_helper"
 
 class Api::V1::MenusControllerTest < ActionDispatch::IntegrationTest
   def setup
-    @menu = Menu.create!(name: "Test Menu", description: "Test Description", active: true)
+    @restaurant = Restaurant.create!(name: "Test Restaurant")
+    @menu = Menu.create!(name: "Test Menu", description: "Test Description", active: true, restaurant: @restaurant)
   end
 
   test "should get index" do
-    get api_v1_menus_url, as: :json
+    get api_v1_restaurant_menus_url(@restaurant), as: :json
     assert_response :success
   end
 
   test "should create menu" do
     assert_difference('Menu.count') do
-      post api_v1_menus_url, params: { menu: { name: "New Menu", description: "New Description", active: true } }, as: :json
+      post api_v1_restaurant_menus_url(@restaurant), params: { menu: { name: "New Menu", description: "New Description", active: true } }, as: :json
     end
 
     assert_response :created
@@ -38,7 +39,7 @@ class Api::V1::MenusControllerTest < ActionDispatch::IntegrationTest
 
   test "should not create menu with invalid params" do
     assert_no_difference('Menu.count') do
-      post api_v1_menus_url, params: { menu: { name: "" } }, as: :json
+      post api_v1_restaurant_menus_url(@restaurant), params: { menu: { name: "" } }, as: :json
     end
 
     assert_response :unprocessable_entity

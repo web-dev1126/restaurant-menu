@@ -2,15 +2,16 @@ require "test_helper"
 
 class MenuItemTest < ActiveSupport::TestCase
   def setup
-    @menu = Menu.create!(name: "Test Menu")
+    @restaurant = Restaurant.create!(name: "Test Restaurant")
+    @menu = Menu.create!(name: "Test Menu", restaurant: @restaurant)
     @menu_item = MenuItem.new(
       name: "Test Item",
       description: "A test menu item",
       price: 10.0,
       category: "Main Course",
-      available: true,
-      menu: @menu
+      available: true
     )
+    @menu.menu_items << @menu_item
   end
 
   test "should be valid" do
@@ -32,27 +33,14 @@ class MenuItemTest < ActiveSupport::TestCase
     assert_not @menu_item.valid?
   end
 
-  test "name should be unique within menu" do
+  test "name should be globally unique" do
     @menu_item.save
     duplicate_item = MenuItem.new(
       name: "Test Item",
       price: 10.0,
-      category: "Main Course",
-      menu: @menu
+      category: "Main Course"
     )
     assert_not duplicate_item.valid?
-  end
-
-  test "name can be same in different menus" do
-    @menu_item.save
-    other_menu = Menu.create!(name: "Other Menu")
-    duplicate_item = MenuItem.new(
-      name: "Test Item",
-      price: 10.0,
-      category: "Main Course",
-      menu: other_menu
-    )
-    assert duplicate_item.valid?
   end
 
   test "description should be at most 500 characters" do
@@ -95,9 +83,23 @@ class MenuItemTest < ActiveSupport::TestCase
     assert_not @menu_item.valid?
   end
 
-  test "should belong to menu" do
-    @menu_item.menu = nil
-    assert_not @menu_item.valid?
+  test "should have many menus through join table" do
+    @menu_item.save
+    other_menu = Menu.create!(name: "Other Menu", restaurant: @restaurant)
+    @menu_item.menus << other_menu
+    assert_equal 2, @menu_item.menus.count
+  end
+
+  test "should have many restaurants through menus" do
+    @menu_item.save
+    assert_equal 1, @menu_item.restaurants.count
+  end
+
+  test "should destroy associated menu item menus" do
+    @menu_item.save
+    assert_difference 'MenuItemMenu.count', -1 do
+      @menu_item.destroy
+    end
   end
 
   test "available scope should return only available items" do
@@ -106,9 +108,9 @@ class MenuItemTest < ActiveSupport::TestCase
       name: "Unavailable Item",
       price: 10.0,
       category: "Main Course",
-      available: false,
-      menu: @menu
+      available: false
     )
+    @menu.menu_items << unavailable_item
     assert_includes MenuItem.available, @menu_item
     assert_not_includes MenuItem.available, unavailable_item
   end
@@ -118,25 +120,29 @@ class MenuItemTest < ActiveSupport::TestCase
     other_item = MenuItem.create!(
       name: "Other Item",
       price: 10.0,
-      category: "Dessert",
-      menu: @menu
+      category: "Dessert"
     )
+    @menu.menu_items << other_item
     main_course_items = MenuItem.by_category("Main Course")
     assert_includes main_course_items, @menu_item
     assert_not_includes main_course_items, other_item
   end
 
   test "ordered_by_name scope should return items in alphabetical order" do
-    MenuItem.create!(name: "Zebra Item", price: 10.0, category: "Main", menu: @menu)
-    MenuItem.create!(name: "Alpha Item", price: 10.0, category: "Main", menu: @menu)
+    zebra_item = MenuItem.create!(name: "Zebra Item", price: 10.0, category: "Main")
+    alpha_item = MenuItem.create!(name: "Alpha Item", price: 10.0, category: "Main")
+    @menu.menu_items << zebra_item
+    @menu.menu_items << alpha_item
     items = MenuItem.ordered_by_name
     assert_equal "Alpha Item", items.first.name
     assert_equal "Zebra Item", items.last.name
   end
 
   test "ordered_by_price scope should return items by price" do
-    MenuItem.create!(name: "Expensive Item", price: 20.0, category: "Main", menu: @menu)
-    MenuItem.create!(name: "Cheap Item", price: 5.0, category: "Main", menu: @menu)
+    expensive_item = MenuItem.create!(name: "Expensive Item", price: 20.0, category: "Main")
+    cheap_item = MenuItem.create!(name: "Cheap Item", price: 5.0, category: "Main")
+    @menu.menu_items << expensive_item
+    @menu.menu_items << cheap_item
     items = MenuItem.ordered_by_price
     assert_equal 5.0, items.first.price
     assert_equal 20.0, items.last.price
@@ -147,9 +153,9 @@ class MenuItemTest < ActiveSupport::TestCase
     assert_equal "$10.50", @menu_item.formatted_price
   end
 
-  test "available? should return availability status" do
+  test "available? should return availability status based on active menus" do
     assert @menu_item.available?
-    @menu_item.available = false
+    @menu.update!(active: false)
     assert_not @menu_item.available?
   end
 end 

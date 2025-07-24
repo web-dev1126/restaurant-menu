@@ -2,10 +2,12 @@ require "test_helper"
 
 class MenuTest < ActiveSupport::TestCase
   def setup
+    @restaurant = Restaurant.create!(name: "Test Restaurant")
     @menu = Menu.new(
       name: "Lunch Menu",
       description: "Delicious lunch options",
-      active: true
+      active: true,
+      restaurant: @restaurant
     )
   end
 
@@ -28,10 +30,17 @@ class MenuTest < ActiveSupport::TestCase
     assert_not @menu.valid?
   end
 
-  test "name should be unique" do
+  test "name should be unique within restaurant" do
     @menu.save
-    duplicate_menu = Menu.new(name: "Lunch Menu")
+    duplicate_menu = Menu.new(name: "Lunch Menu", restaurant: @restaurant)
     assert_not duplicate_menu.valid?
+  end
+
+  test "name can be same in different restaurants" do
+    @menu.save
+    other_restaurant = Restaurant.create!(name: "Other Restaurant")
+    duplicate_menu = Menu.new(name: "Lunch Menu", restaurant: other_restaurant)
+    assert duplicate_menu.valid?
   end
 
   test "description should be at most 500 characters" do
@@ -44,24 +53,18 @@ class MenuTest < ActiveSupport::TestCase
     assert_not @menu.valid?
   end
 
-  test "should have many menu items" do
+  test "should have many menu items through join table" do
     @menu.save
-    @menu.menu_items.create!(
-      name: "Burger",
-      price: 10.0,
-      category: "Main Course"
-    )
+    menu_item = MenuItem.create!(name: "Burger", price: 10.0, category: "Main Course")
+    @menu.menu_items << menu_item
     assert_equal 1, @menu.menu_items.count
   end
 
-  test "should destroy associated menu items" do
+  test "should destroy associated menu item menus" do
     @menu.save
-    @menu.menu_items.create!(
-      name: "Burger",
-      price: 10.0,
-      category: "Main Course"
-    )
-    assert_difference 'MenuItem.count', -1 do
+    menu_item = MenuItem.create!(name: "Burger", price: 10.0, category: "Main Course")
+    @menu.menu_items << menu_item
+    assert_difference 'MenuItemMenu.count', -1 do
       @menu.destroy
     end
   end
@@ -83,15 +86,19 @@ class MenuTest < ActiveSupport::TestCase
 
   test "available_items_count should return count of available items" do
     @menu.save
-    @menu.menu_items.create!(name: "Available Item", price: 10.0, category: "Main", available: true)
-    @menu.menu_items.create!(name: "Unavailable Item", price: 10.0, category: "Main", available: false)
+    available_item = MenuItem.create!(name: "Available Item", price: 10.0, category: "Main", available: true)
+    unavailable_item = MenuItem.create!(name: "Unavailable Item", price: 10.0, category: "Main", available: false)
+    @menu.menu_items << available_item
+    @menu.menu_items << unavailable_item
     assert_equal 1, @menu.available_items_count
   end
 
   test "total_items_count should return total count of items" do
     @menu.save
-    @menu.menu_items.create!(name: "Item 1", price: 10.0, category: "Main")
-    @menu.menu_items.create!(name: "Item 2", price: 10.0, category: "Main")
+    item1 = MenuItem.create!(name: "Item 1", price: 10.0, category: "Main")
+    item2 = MenuItem.create!(name: "Item 2", price: 10.0, category: "Main")
+    @menu.menu_items << item1
+    @menu.menu_items << item2
     assert_equal 2, @menu.total_items_count
   end
 end 

@@ -2,15 +2,16 @@ require "test_helper"
 
 class Api::V1::MenuItemsControllerTest < ActionDispatch::IntegrationTest
   def setup
-    @menu = Menu.create!(name: "Test Menu")
+    @restaurant = Restaurant.create!(name: "Test Restaurant")
+    @menu = Menu.create!(name: "Test Menu", restaurant: @restaurant)
     @menu_item = MenuItem.create!(
       name: "Test Item",
       description: "Test Description",
       price: 10.0,
       category: "Main Course",
-      available: true,
-      menu: @menu
+      available: true
     )
+    @menu.menu_items << @menu_item
   end
 
   test "should get index" do
@@ -24,6 +25,22 @@ class Api::V1::MenuItemsControllerTest < ActionDispatch::IntegrationTest
         menu_item: { 
           name: "New Item", 
           description: "New Description", 
+          price: 15.0, 
+          category: "Dessert", 
+          available: true 
+        } 
+      }, as: :json
+    end
+
+    assert_response :created
+  end
+
+  test "should create menu item with same name in different menu" do
+    other_menu = Menu.create!(name: "Other Menu", restaurant: @restaurant)
+    assert_no_difference('MenuItem.count') do
+      post api_v1_menu_menu_items_url(other_menu), params: { 
+        menu_item: { 
+          name: "Test Item", 
           price: 15.0, 
           category: "Dessert", 
           available: true 

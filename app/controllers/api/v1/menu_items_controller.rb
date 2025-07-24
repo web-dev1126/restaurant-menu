@@ -12,8 +12,9 @@ class Api::V1::MenuItemsController < ApplicationController
   end
 
   def create
-    @menu_item = @menu.menu_items.build(menu_item_params)
+    @menu_item = MenuItem.new(menu_item_params)
     if @menu_item.save
+      @menu.menu_items << @menu_item
       render json: @menu_item, status: :created
     else
       render json: { errors: @menu_item.errors.full_messages }, status: :unprocessable_entity

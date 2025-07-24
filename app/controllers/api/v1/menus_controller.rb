@@ -1,8 +1,9 @@
 class Api::V1::MenusController < ApplicationController
   before_action :set_menu, only: [:show, :update, :destroy]
+  before_action :set_restaurant, only: [:index, :create]
 
   def index
-    @menus = Menu.all
+    @menus = @restaurant.menus.all
     render json: @menus
   end
 
@@ -11,7 +12,7 @@ class Api::V1::MenusController < ApplicationController
   end
 
   def create
-    @menu = Menu.new(menu_params)
+    @menu = @restaurant.menus.build(menu_params)
     if @menu.save
       render json: @menu, status: :created
     else
@@ -38,6 +39,12 @@ class Api::V1::MenusController < ApplicationController
     @menu = Menu.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Menu not found' }, status: :not_found
+  end
+
+  def set_restaurant
+    @restaurant = Restaurant.find(params[:restaurant_id])
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: 'Restaurant not found' }, status: :not_found
   end
 
   def menu_params
